@@ -21,3 +21,24 @@ FROM
 ORDER BY 
   user_total_spent DESC
 LIMIT 5;
+
+
+-- daily revenue trends
+SELECT 
+  rental_date, 
+  total_revenue
+FROM 
+  rental.daily_metrics
+ORDER BY 
+  rental_date;
+
+
+
+SELECT 
+  vehicle_type, 
+  COUNT(*) AS total_rentals
+FROM 
+  rental.vehicle_metrics
+ORDER BY 
+  total_rentals DESC
+LIMIT 1;
