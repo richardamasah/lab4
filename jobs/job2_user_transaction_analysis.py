@@ -25,7 +25,7 @@ transactions_df = transactions_df.withColumn("rental_duration_hours",
 # Add rental_date
 transactions_df = transactions_df.withColumn("rental_date", to_date("rental_start_time"))
 
-# ---------- Metrics 1: Daily Metrics ----------
+# ---------- Metrics 1: Daily Metrics ---------
 daily_metrics = transactions_df.groupBy("rental_date").agg(
     count("*").alias("total_transactions"),
     sum("total_amount").alias("total_revenue")
