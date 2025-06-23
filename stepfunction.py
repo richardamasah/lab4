@@ -1,7 +1,5 @@
-this worked but add error handlijg to it
-
 {
-  "Comment": "Full Pipeline: EMR Serverless + Glue + Athena Query",
+  "Comment": "Full Pipeline: EMR Serverless + Glue + Athena Query with Dynamic ClientTokens and Error Handling",
   "StartAt": "Run EMR Job 1",
   "States": {
     "Run EMR Job 1": {
@@ -10,7 +8,7 @@ this worked but add error handlijg to it
       "Parameters": {
         "ApplicationId": "00ftgd0mglcs9o1d",
         "ExecutionRoleArn": "arn:aws:iam::992382846559:role/service-role/AmazonEMR-ExecutionRole-1750672410748",
-        "ClientToken": "job1-run-001",
+        "ClientToken.$": "States.Format('job1-{}', States.UUID())",
         "JobDriver": {
           "SparkSubmit": {
             "EntryPoint": "s3://lab4emr1/scripts/job1_vehicle_location_metrics.py",
@@ -23,15 +21,21 @@ this worked but add error handlijg to it
           }
         }
       },
-      "Next": "Run EMR Job 2"
+      "Next": "Run EMR Job 2",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Fail"
+        }
+      ]
     },
     "Run EMR Job 2": {
       "Type": "Task",
       "Resource": "arn:aws:states:::aws-sdk:emrserverless:startJobRun",
       "Parameters": {
         "ApplicationId": "00ftgd0mglcs9o1d",
-        "ExecutionRoleArn": "arn:aws:iam::992382846559:role/YOUR_EMR_ROLE_NAME",
-        "ClientToken": "job2-run-001",
+        "ExecutionRoleArn": "arn:aws:iam::992382846559:role/service-role/AmazonEMR-ExecutionRole-1750672410748",
+        "ClientToken.$": "States.Format('job2-{}', States.UUID())",
         "JobDriver": {
           "SparkSubmit": {
             "EntryPoint": "s3://lab4emr1/scripts/job2_user_transaction_analysis.py",
@@ -43,7 +47,13 @@ this worked but add error handlijg to it
           }
         }
       },
-      "Next": "Start Glue Crawler 1"
+      "Next": "Start Glue Crawler 1",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Fail"
+        }
+      ]
     },
     "Start Glue Crawler 1": {
       "Type": "Task",
@@ -51,7 +61,13 @@ this worked but add error handlijg to it
       "Parameters": {
         "Name": "rental-crawler1"
       },
-      "Next": "Start Glue Crawler 2"
+      "Next": "Start Glue Crawler 2",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Fail"
+        }
+      ]
     },
     "Start Glue Crawler 2": {
       "Type": "Task",
@@ -59,7 +75,13 @@ this worked but add error handlijg to it
       "Parameters": {
         "Name": "rental-crawler2"
       },
-      "Next": "Run Athena Query"
+      "Next": "Run Athena Query",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Fail"
+        }
+      ]
     },
     "Run Athena Query": {
       "Type": "Task",
@@ -73,10 +95,21 @@ this worked but add error handlijg to it
           "OutputLocation": "s3://lab4emr1/athena-results/"
         }
       },
-      "Next": "Success"
+      "Next": "Success",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Fail"
+        }
+      ]
     },
     "Success": {
       "Type": "Succeed"
+    },
+    "Fail": {
+      "Type": "Fail",
+      "Error": "PipelineFailed",
+      "Cause": "One of the tasks failed. Check logs in CloudWatch."
     }
   }
 }
