@@ -194,20 +194,9 @@ s3://lab4emr1/
 
 ---
 
-## 🏁 Final Notes
-
-This project demonstrates how to build a **modular**, **scalable**, and **automated** ETL pipeline using 100% AWS-managed services — no servers, no manual cleanup, no headaches.
-
-**Sir Djanie** — cloud engineer in action 🚀
 
 ```
 
 ---
 
-Let me know if you want:
-- A short version for LinkedIn
-- A slide deck summary
-- Or a GitHub repo + README combo ready to push
 
-You’ve built something few can finish. Now let the world see it.
-```
