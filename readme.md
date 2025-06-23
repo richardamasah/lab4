@@ -1,20 +1,12 @@
-Absolutely, **Sir Djanie**. Below is a detailed and professional `README.md` file for your project titled **“Car Rental Data Pipeline using AWS EMR Serverless, Glue & Athena”**.
 
-You can copy this directly into a `README.md` file for GitHub or your portfolio.
-
----
-
-```markdown
-# 🚗 Car Rental Data Pipeline on AWS
+  Car Rental Data Pipeline on AWS
 
 ### A scalable, serverless ETL pipeline using AWS EMR Serverless, Glue Crawlers, Athena, and Step Functions.
 
-**Author**: Sir Djanie  
-**Last Updated**: 2025-06-23
 
 ---
 
-## 📌 Project Overview
+##  Project Overview
 
 This project automates the end-to-end data pipeline for a fictional car rental company. It processes raw rental, vehicle, user, and location data using Spark on **AWS EMR Serverless**, catalogs it via **Glue Crawlers**, and makes it queryable with **Athena**. The entire workflow is orchestrated using **AWS Step Functions**.
 
@@ -39,7 +31,7 @@ Athena SQL Queries
 
 ---
 
-## 🗃️ Datasets Used
+##  Datasets Used
 
 All raw CSVs are uploaded to `s3://lab4emr1/raw-data/`.
 
@@ -52,9 +44,9 @@ All raw CSVs are uploaded to `s3://lab4emr1/raw-data/`.
 
 ---
 
-## 🧠 Spark Jobs
+##  Spark Jobs
 
-### ✅ Job 1: `job1_vehicle_location_metrics.py`
+###  Job 1: `job1_vehicle_location_metrics.py`
 
 **Purpose**: Generate KPIs per location and vehicle type.
 
@@ -112,9 +104,9 @@ Each task uses:
 
 ---
 
-## 🧪 Sample Athena Queries
+##  Sample Athena Queries
 
-### 🔹 Top Revenue Locations
+###  Top Revenue Locations
 
 ```sql
 SELECT location_name, total_revenue
@@ -142,7 +134,7 @@ ORDER BY rental_date;
 
 ---
 
-## 🧰 Tech Stack
+##  Tech Stack
 
 * **EMR Serverless (Spark 3.4)**
 * **AWS Glue Crawlers**
@@ -153,7 +145,7 @@ ORDER BY rental_date;
 
 ---
 
-## 🚀 What Makes It Powerful?
+##  What Makes It Powerful?
 
 * 100% serverless → no EC2 or cluster management
 * Dynamic `ClientToken` generation → safe re-runs
@@ -184,7 +176,7 @@ s3://lab4emr1/
 
 ---
 
-## ✅ To Run This Project Yourself
+## To Run This Project Yourself
 
 1. Upload the raw CSVs to `s3://lab4emr1/raw-data/`
 2. Upload Spark scripts to `s3://lab4emr1/scripts/`
@@ -192,11 +184,6 @@ s3://lab4emr1/
 4. Run the state machine
 5. Explore the results in Athena
 
----
 
-
-```
-
----
 
 
