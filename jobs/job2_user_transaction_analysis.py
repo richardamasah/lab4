@@ -48,4 +48,4 @@ user_metrics = user_metrics.join(users_df, on="user_id", how="left")
 daily_metrics.write.mode("overwrite").parquet(f"{output_path}daily_metrics")
 user_metrics.write.mode("overwrite").parquet(f"{output_path}user_metrics")
 
-print("✅ Job 2 Completed Successfully.")
+print("✅ Job 2 Completed Successfully..")
