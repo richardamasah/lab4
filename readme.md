@@ -1,5 +1,5 @@
 
-  Car Rental Data Pipeline on AWS
+  
 
 ### A scalable, serverless ETL pipeline using AWS EMR Serverless, Glue Crawlers, Athena, and Step Functions.
 
