@@ -12,7 +12,7 @@ This project automates the end-to-end data pipeline for a fictional car rental c
 
 ---
 
-## ⚙️ Architecture Overview
+##  Architecture Overview
 
 ```
 
@@ -61,7 +61,7 @@ Creates tables: `location_metrics`, `vehicle_metrics`
 
 ---
 
-### ✅ Job 2: `job2_user_transaction_analysis.py`
+###  Job 2: `job2_user_transaction_analysis.py`
 
 **Purpose**: Analyze user engagement and daily transactions.
 
@@ -74,7 +74,9 @@ Creates tables: `daily_metrics`, `user_metrics`
 
 ---
 
-## 🔁 Step Functions Orchestration
+##  Step Functions Orchestration
+
+![Functions Orchestration](images/step-fxn-image.jpeg)
 
 The workflow automates:
 
