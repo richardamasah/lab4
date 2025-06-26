@@ -6,6 +6,8 @@
 
 ###  The Business Scenario
 
+"What if a car rental company could instantly know which cities were driving the most revenue, which vehicle types were wasting resources, and which users were their highest-value customers — all without hiring an analytics team?"
+
 Imagine a nationwide car rental company like **Axis, Hertz, or a local Ghanaian startup** with hundreds of vehicles and customers booking rentals daily. The business challenge is not just **renting cars**, but:
 
 * Understanding **which locations make the most money** 
