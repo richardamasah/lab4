@@ -14,6 +14,8 @@ This project automates the end-to-end data pipeline for a fictional car rental c
 
 ##  Architecture Overview
 
+![Architecture diagram](images/architectural.png)
+
 ```
 
 S3 (Raw Data)
@@ -76,7 +78,7 @@ Creates tables: `daily_metrics`, `user_metrics`
 
 ##  Step Functions Orchestration
 
-![Functions Orchestration](images/step-fxn-image.jpeg)
+![Functions Orchestration](images/step-fxn.png)
 
 The workflow automates:
 
