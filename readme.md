@@ -78,7 +78,7 @@ Creates tables: `daily_metrics`, `user_metrics`
 
 ##  Step Functions Orchestration
 
-![Functions Orchestration](images/step-fxn.png)
+![Functions Orchestration](images/stepfunctions_graph.png)
 
 The workflow automates:
 
