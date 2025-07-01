@@ -240,7 +240,7 @@ if __name__ == "__main__":
         vehicle_metrics.write.mode("overwrite").parquet(vehicle_metrics_output_path)
         logger.info(f"Successfully saved vehicle metrics to: {vehicle_metrics_output_path}")
 
-        logger.info("✅ Job 1 Completed Successfully.")
+        logger.info(" Job 1 Completed Successfully.")
     except Exception as e:
         logger.error(f"Failed to save outputs to S3: {e}", exc_info=True)
         spark.stop()

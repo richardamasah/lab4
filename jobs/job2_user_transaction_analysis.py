@@ -1,7 +1,30 @@
 import sys
+import logging # Import the logging module
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import to_timestamp, to_date, unix_timestamp, col, count, sum, max, min, avg
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, TimestampType
 from pyspark.sql.utils import AnalysisException # Import for handling potential schema inference/read errors
+
+# ---------------------------------------
+# Configure Logging
+# ---------------------------------------
+# Get the root logger
+logger = logging.getLogger(__name__)
+# Set the logging level (e.g., INFO, DEBUG, WARNING, ERROR, CRITICAL)
+logger.setLevel(logging.INFO)
+
+# Create a console handler and set its level
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+
+# Create a formatter and add it to the handler
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Add the handler to the logger
+# Ensure handlers are not duplicated if the script is run multiple times in the same process
+if not logger.handlers:
+    logger.addHandler(console_handler)
 
 # Main execution block for the PySpark script
 if __name__ == "__main__":
@@ -13,52 +36,88 @@ if __name__ == "__main__":
     # 2. Path to the users dataset in S3
     # 3. Output path in S3 for processed data
     if len(sys.argv) != 4:
-        print("Error: Incorrect number of arguments provided.")
-        print("Usage: spark-submit your_script.py <transactions_s3_path> <users_s3_path> <output_s3_path>")
+        logger.error("Incorrect number of arguments provided.")
+        logger.info("Usage: spark-submit your_script.py <transactions_s3_path> <users_s3_path> <output_s3_path>")
         sys.exit(1) # Exit with an error code
 
     transactions_path = sys.argv[1]
     users_path = sys.argv[2]
     output_path = sys.argv[3]
 
-    print(f"INFO: Starting Spark Job: UserTransactionAnalysis")
-    print(f"INFO: Input Transactions Path: {transactions_path}")
-    print(f"INFO: Input Users Path: {users_path}")
-    print(f"INFO: Output Path: {output_path}")
+    logger.info(f"Starting Spark Job: UserTransactionAnalysis")
+    logger.info(f"Input Transactions Path: {transactions_path}")
+    logger.info(f"Input Users Path: {users_path}")
+    logger.info(f"Output Path: {output_path}")
 
     # ---------------------------------------
     # 2. Start Spark session
     # ---------------------------------------
     try:
         spark = SparkSession.builder.appName("UserTransactionAnalysis").getOrCreate()
-        print("INFO: Spark session created successfully.")
+        logger.info("Spark session created successfully.")
     except Exception as e:
-        print(f"ERROR: Failed to create Spark session: {e}")
+        logger.error(f"Failed to create Spark session: {e}", exc_info=True)
         sys.exit(1) # Exit if Spark session cannot be created
 
     # ---------------------------------------
-    # 3. Load datasets from S3
+    # 3. Define Schemas for Input DataFrames
+    # ---------------------------------------
+    # Explicitly defining schemas ensures data types are correctly interpreted.
+
+    # Schema for rental_transactions dataset
+    # Note: rental_start_time and rental_end_time are read as StringType initially,
+    # then converted to TimestampType in the preprocessing step.
+    transactions_schema = StructType([
+        StructField("rental_id", StringType(), True),
+        StructField("user_id", StringType(), True),
+        StructField("vehicle_id", StringType(), True),
+        StructField("rental_start_time", StringType(), True), # Will be converted to TimestampType
+        StructField("rental_end_time", StringType(), True),   # Will be converted to TimestampType
+        StructField("pickup_location", IntegerType(), True),
+        StructField("dropoff_location", IntegerType(), True),
+        StructField("total_amount", DoubleType(), True)
+    ])
+    logger.info("Defined schema for rental_transactions data.")
+
+    # Schema for users dataset
+    users_schema = StructType([
+        StructField("user_id", StringType(), True),
+        StructField("first_name", StringType(), True),
+        StructField("last_name", StringType(), True),
+        StructField("email", StringType(), True),
+        StructField("phone_number", StringType(), True),
+        StructField("driver_license_number", StringType(), True),
+        StructField("driver_license_expiry", StringType(), True),
+        StructField("creation_date", StringType(), True),
+        StructField("is_active", IntegerType(), True)
+    ])
+    logger.info("Defined schema for users data.")
+
+    # ---------------------------------------
+    # 4. Load datasets from S3 using defined schemas
     # ---------------------------------------
     # Using try-except blocks to catch potential issues during data loading,
     # such as incorrect paths or corrupted files.
     try:
-        transactions_df = spark.read.option("header", True).option("inferSchema", True).csv(transactions_path)
-        print(f"INFO: Loaded transactions data from: {transactions_path}. Rows: {transactions_df.count()}")
+        # Load transactions data with its defined schema
+        transactions_df = spark.read.option("header", True).schema(transactions_schema).csv(transactions_path)
+        logger.info(f"Loaded transactions data from: {transactions_path}. Rows: {transactions_df.count()}")
 
-        users_df = spark.read.option("header", True).option("inferSchema", True).csv(users_path)
-        print(f"INFO: Loaded users data from: {users_path}. Rows: {users_df.count()}")
+        # Load users data with its defined schema
+        users_df = spark.read.option("header", True).schema(users_schema).csv(users_path)
+        logger.info(f"Loaded users data from: {users_path}. Rows: {users_df.count()}")
 
     except AnalysisException as e:
-        print(f"ERROR: Failed to load one or more datasets. Check S3 paths and file formats. Error: {e}")
+        logger.error(f"Failed to load one or more datasets. Check S3 paths, file formats, and schema definitions. Error: {e}", exc_info=True)
         spark.stop()
         sys.exit(1)
     except Exception as e:
-        print(f"ERROR: An unexpected error occurred during data loading: {e}")
+        logger.error(f"An unexpected error occurred during data loading: {e}", exc_info=True)
         spark.stop()
         sys.exit(1)
 
     # ---------------------------------------
-    # 4. Data Preprocessing
+    # 5. Data Preprocessing
     # ---------------------------------------
     # Convert 'rental_start_time' and 'rental_end_time' to timestamp type
     # This is crucial for date/time calculations.
@@ -70,16 +129,16 @@ if __name__ == "__main__":
         transactions_df = transactions_df.withColumn("rental_duration_hours",
             (unix_timestamp("rental_end_time") - unix_timestamp("rental_start_time")) / 3600)
         transactions_df = transactions_df.withColumn("rental_date", to_date("rental_start_time"))
-        print("INFO: Successfully preprocessed rental transactions data (timestamp conversion, duration, and date calculation).")
+        logger.info("Successfully preprocessed rental transactions data (timestamp conversion, duration, and date calculation).")
         # You might want to add data validation here, e.g., filter out records where rental_duration_hours is negative
         # transactions_df = transactions_df.filter(col("rental_duration_hours") >= 0)
     except Exception as e:
-        print(f"ERROR: Failed during data preprocessing (timestamp conversion or duration/date calculation): {e}")
+        logger.error(f"Failed during data preprocessing (timestamp conversion or duration/date calculation): {e}", exc_info=True)
         spark.stop()
         sys.exit(1)
 
     # ---------------------------------------
-    # 5. Metrics 1: Daily Metrics
+    # 6. Metrics 1: Daily Metrics
     # ---------------------------------------
     # Group transactions by 'rental_date' to calculate daily aggregates:
     # - total_transactions: Count of all transactions per day
@@ -89,16 +148,16 @@ if __name__ == "__main__":
             count("*").alias("total_transactions"),
             sum("total_amount").alias("total_revenue")
         )
-        print("INFO: Calculated daily transaction metrics.")
-        # Show a sample of the results for verification
+        logger.info("Calculated daily transaction metrics.")
+        # Show a sample of the results for verification - this will still print to stdout
         daily_metrics.show(5)
     except Exception as e:
-        print(f"ERROR: Failed during calculation of daily metrics: {e}")
+        logger.error(f"Failed during calculation of daily metrics: {e}", exc_info=True)
         spark.stop()
         sys.exit(1)
 
     # ---------------------------------------
-    # 6. Metrics 2: User Metrics
+    # 7. Metrics 2: User Metrics
     # ---------------------------------------
     # Group transactions by 'user_id' to calculate user-specific performance:
     # - user_total_transactions: Total number of transactions per user
@@ -116,31 +175,31 @@ if __name__ == "__main__":
             min("total_amount").alias("user_min_transaction"),
             avg("total_amount").alias("user_avg_transaction")
         )
-        print("INFO: Calculated user-specific transaction metrics.")
-        # Show a sample of the results for verification
+        logger.info("Calculated user-specific transaction metrics.")
+        # Show a sample of the results for verification - this will still print to stdout
         user_metrics.show(5)
     except Exception as e:
-        print(f"ERROR: Failed during calculation of user metrics: {e}")
+        logger.error(f"Failed during calculation of user metrics: {e}", exc_info=True)
         spark.stop()
         sys.exit(1)
 
     # ---------------------------------------
-    # 7. Join with user info
+    # 8. Join with user info
     # ---------------------------------------
     # Join the calculated user metrics with the 'users_df' to enrich with user details
     # (e.g., first_name, last_name, email).
     try:
         user_metrics = user_metrics.join(users_df, on="user_id", how="left")
-        print("INFO: Joined user metrics with user details.")
-        # Show a sample of the joined results
+        logger.info("Joined user metrics with user details.")
+        # Show a sample of the joined results - this will still print to stdout
         user_metrics.show(5)
     except Exception as e:
-        print(f"ERROR: Failed during joining user metrics with user details: {e}")
+        logger.error(f"Failed during joining user metrics with user details: {e}", exc_info=True)
         spark.stop()
         sys.exit(1)
 
     # ---------------------------------------
-    # 8. Write Outputs to Parquet in S3
+    # 9. Write Outputs to Parquet in S3
     # ---------------------------------------
     # Write the calculated daily metrics and user metrics to S3 in Parquet format.
     # 'overwrite' mode will replace the output directory if it already exists.
@@ -148,21 +207,22 @@ if __name__ == "__main__":
         # Output for daily metrics
         daily_metrics_output_path = f"{output_path}daily_metrics"
         daily_metrics.write.mode("overwrite").parquet(daily_metrics_output_path)
-        print(f"INFO: Successfully saved daily metrics to: {daily_metrics_output_path}")
+        logger.info(f"Successfully saved daily metrics to: {daily_metrics_output_path}")
 
         # Output for user metrics
         user_metrics_output_path = f"{output_path}user_metrics"
         user_metrics.write.mode("overwrite").parquet(user_metrics_output_path)
-        print(f"INFO: Successfully saved user metrics to: {user_metrics_output_path}")
+        logger.info(f"Successfully saved user metrics to: {user_metrics_output_path}")
 
-        print("✅ Job 2 Completed Successfully.")
+        logger.info(" Job 2 Completed Successfully.")
     except Exception as e:
-        print(f"ERROR: Failed to save outputs to S3: {e}")
+        logger.error(f"Failed to save outputs to S3: {e}", exc_info=True)
         spark.stop()
         sys.exit(1)
 
     # ---------------------------------------
-    # 9. Stop Spark session
+    # 10. Stop Spark session
     # ---------------------------------------
     spark.stop()
-    print("INFO: Spark session stopped.")
+    logger.info("Spark session stopped.")
+
